@@ -67,7 +67,8 @@ class ConversationManager:
                                             """, "Evaluating program completion...")
         
             if "yes" in feedback.lower():
-                CodeExecutor.save_code(self.project_code, f"project_{iteration}.py")
+                clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
+                CodeExecutor.save_code(clean_project_code, f"project_{iteration}.py")
                 completion = "yes"
                 logging.info("Project deemed complete and potentially profitable.")
             else:
