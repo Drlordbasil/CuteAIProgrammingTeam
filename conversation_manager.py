@@ -1,7 +1,7 @@
 #conversation_manager.py
 from openai import OpenAI
 import logging
-from config import model, idea_prompt, code_prompt
+from config import model, idea_prompt, code_prompt, idea_system,code_system,feedback_system,feedback_user
 import re
 from code_executer import CodeExecutor
 
@@ -39,32 +39,15 @@ class ConversationManager:
 
 
     def iterate_development(self):
-        self.project_idea = self.generate_response(model, idea_prompt, "Generating extremely real profitable project idea that an LLM can create in one response...")
-        self.project_code = self.generate_response(model, code_prompt+f"{self.project_idea}", "Developing project code(full robust verbose complex logic without placeholders)...I am a python programming superstar")
+        self.project_idea = self.generate_response(model, idea_prompt, idea_system)
+        self.project_code = self.generate_response(model, code_prompt+f"{self.project_idea}", code_system)
         
         completion = "no"
         iteration = 0
         while completion == "no":
             clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
             execution_result = CodeExecutor.execute_python_code(clean_project_code)
-            feedback = self.generate_response(model, f"""
-                                            Execution result: {execution_result}\n
-                                            Is the program complete and profitable either directly or indirectly using the original idea of {self.project_idea}?
-                                            Make sure you are heavily reviewing it for  the following criteria all must be met as our requirements:(all answers must be no if one answer is no, dont include yes at all if no is an answer.) 
-                                            1. Does it profit eventually?
-                                            2. Is it complete?
-                                            3. Does it have a niche?
-                                            4. Is it robust?
-                                            5. is it free of placeholders?
-                                            6. Does it have a unique selling point?
-                                            7. Is it a program that can be run on any computer with python installed(given libraries are installed as well)?
-                                            8. does it have a main loop with GUI?
-                                            9. is it creatively unique?
-                                                script:
-                                                {clean_project_code}
-                                            Answer yes or no ONLY, if all criteria are met, answer yes.
-                                            if all criteria are not met, answer no. Only answer 1 yes or no, dont respond to each criteria individually as I just need a yes/no answer to move on. Does it pass all?
-                                            """, "Evaluating program completion...")
+            feedback = self.generate_response(model, feedback_user, feedback_system)
         
             if "yes" in feedback.lower():
                 clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
