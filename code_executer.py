@@ -32,6 +32,10 @@ class CodeExecutor:
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
             return f"Unexpected error: {e}"
+        except subprocess.TimeoutExpired as e:
+            logging.error(f"Execution timeout: {e}")
+            return f"Execution timeout: {e}"
+        
         finally:
             os.remove(tmp_name)
 
@@ -86,3 +90,4 @@ class CodeExecutor:
         code_blocks = [re.sub(r'#.*', '', match.strip()) for match in matches]  # Remove comments
         clean_code = '\n'.join(code_blocks).replace('```python', '').replace('```', '')  # Remove markdown syntax
         return clean_code
+
