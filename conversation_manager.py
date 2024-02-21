@@ -46,6 +46,7 @@ class ConversationManager:
         iteration = 0
         while completion == "no":
             clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
+            CodeExecutor.save_code(clean_project_code, f"project_{iteration}.py")
             execution_result = CodeExecutor.execute_python_code(clean_project_code)
             feedback = self.generate_response(model, feedback_user+execution_result+clean_project_code, feedback_system)
         
