@@ -46,9 +46,9 @@ class ConversationManager:
         iteration = 0
         while completion == "no":
             clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
-            
+            execution_result = CodeExecutor.execute_python_code(clean_project_code)
             feedback = self.generate_response(model, f"""
-                                            \n
+                                            Execution result: {execution_result}\n
                                             Is the program complete and profitable either directly or indirectly using the original idea of {self.project_idea}?
                                             Make sure you are heavily reviewing it for  the following criteria all must be met as our requirements:(all answers must be no if one answer is no, dont include yes at all if no is an answer.) 
                                             1. Does it profit eventually?
@@ -66,26 +66,14 @@ class ConversationManager:
                                             if all criteria are not met, answer no. Only answer 1 yes or no, dont respond to each criteria individually as I just need a yes/no answer to move on. Does it pass all?
                                             """, "Evaluating program completion...")
         
-        if "yes" in feedback.lower():
-            CodeExecutor.save_code(self.project_code, f"project_{iteration}.py")
-            clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
-            execution_result = CodeExecutor.execute_python_code(clean_project_code)
-            logging.info(f"Execution result: {execution_result}")
-            print(f"Execution result: {execution_result}")
-
-            completion = "yes"
-            logging.info("Project deemed complete and potentially profitable.")
-        else:
-            CodeExecutor.save_code(self.project_code, f"project_{iteration}_before_refinement.py")
-            refined_code = self.generate_response(model, f"Refine the Python code to ensure profitability and completion. {self.project_code} as it was rejected by another AI", "Refining project code to meet academic standards and beyond...")
-            valid_code = self.extract_python_code(refined_code)
-            
-            if valid_code:
-                self.project_code = valid_code
-                CodeExecutor.save_code(self.project_code, f"project_{iteration}_after_refinement.py")
-                print(f"Refined code saved to project_{iteration}_after_refinement.py")
+            if "yes" in feedback.lower():
+                CodeExecutor.save_code(self.project_code, f"project_{iteration}.py")
+                completion = "yes"
+                logging.info("Project deemed complete and potentially profitable.")
+            else:
+                CodeExecutor.save_code(self.project_code, f"project_{iteration}_before_refinement.py")
+                self.project_code = self.generate_response(model, f"Refine the Python code to ensure profitability and completion. {self.project_code} as it was rejected by another AI", "Refining project code to meet academic standards and beyond...")
                 iteration += 1
-
     def conversation_thread(self):
         self.iterate_development()
         if self.project_code:
