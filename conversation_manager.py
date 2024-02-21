@@ -47,7 +47,7 @@ class ConversationManager:
         while completion == "no":
             clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
             execution_result = CodeExecutor.execute_python_code(clean_project_code)
-            feedback = self.generate_response(model, feedback_user, feedback_system)
+            feedback = self.generate_response(model, feedback_user+execution_result+clean_project_code, feedback_system)
         
             if "yes" in feedback.lower():
                 clean_project_code = CodeExecutor.remove_comments_and_extract_code(self.project_code)
