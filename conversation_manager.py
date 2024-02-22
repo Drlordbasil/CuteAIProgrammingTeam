@@ -3,7 +3,7 @@ import logging
 from config import model, idea_prompt, code_prompt, idea_system, code_system, feedback_system, feedback_user, ft3, gpt3
 import re
 from code_executer import CodeExecutor
-from gemeni_chat import GeminiChat
+from gemini_chat import GeminiChat
 
 # Initialize GeminiChat for conversation with Gemini+OpenAI integration
 chat = GeminiChat()
