@@ -9,7 +9,17 @@ class CodeExecutor:
     Class to execute Python code securely and efficiently, with improved error handling and maintainability.
     Adapted to conditionally handle or simulate user inputs in executed code.
     """
-    
+    @staticmethod
+    def is_valid_code(code):
+        """
+        Validates Python code for syntax without executing it.
+        Returns True if the code is syntactically correct, False otherwise.
+        """
+        try:
+            compile(code, '<string>', 'exec')
+            return True
+        except SyntaxError:
+            return False
     @staticmethod
     def execute_python_code(code, input_simulation=None):
         """
@@ -90,4 +100,3 @@ class CodeExecutor:
         code_blocks = [re.sub(r'#.*', '', match.strip()) for match in matches]  # Remove comments
         clean_code = '\n'.join(code_blocks).replace('```python', '').replace('```', '')  # Remove markdown syntax
         return clean_code
-
