@@ -5,7 +5,6 @@ import re
 from code_executer import CodeExecutor
 from gemini_chat import GeminiChat
 
-
 # Initialize Gemini Chat
 chat = GeminiChat()
 chat.start_chat()
@@ -72,7 +71,11 @@ class ConversationManager:
             else:
                 logging.info("Code is not valid for execution. Refinement needed.")
                 print("Code is not valid for execution. Refinement needed.")
-                break
+                refinement_prompt = f"Refine code based on feedback:\n\nFeedback:\nCode contains errors. Refine the code to fix the errors.\n\nCurrent Code:\n{self.project_code}"+self.project_code+self.project_idea
+                logging.info("Refining code based on feedback...")
+                print("Refining code based on feedback...")
+                self.project_code = self.generate_response(model, refinement_prompt, "Refining code...")
+                iteration += 1
 
     def conversation_thread(self):
         '''
@@ -84,4 +87,3 @@ class ConversationManager:
         else:
             logging.warning("Failed to develop a profitable project.")
         logging.info("Conversation and development process complete.")
-
