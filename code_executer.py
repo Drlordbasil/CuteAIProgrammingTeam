@@ -4,6 +4,20 @@ import os
 import logging
 import re
 
+# Improved logging setup (example - to be adjusted based on requirements)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+class SecureTempFile:
+    """
+    Context manager for managing temporary files securely and efficiently.
+    """
+    def __enter__(self):
+        self.temp_file = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+        return self.temp_file
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.remove(self.temp_file.name)
+
 class CodeExecutor:
     """
     Class to execute Python code securely and efficiently, with improved error handling and maintainability.
@@ -11,25 +25,17 @@ class CodeExecutor:
     """
     @staticmethod
     def is_valid_code(code):
-        """
-        Validates Python code for syntax without executing it.
-        Returns True if the code is syntactically correct, False otherwise.
-        """
         try:
             compile(code, '<string>', 'exec')
             return True
-        except SyntaxError:
+        except SyntaxError as e:
+            logging.error(f"Syntax error in code: {e.msg} at line {e.lineno}")
             return False
+
     @staticmethod
-    def execute_python_code(code, input_simulation=None):
-        """
-        Executes Python code from a string, capturing stdout and stderr.
-        Conditionally simulates user input if 'input_simulation' is provided.
-        Returns the stdout output, or an error message in case of failure.
-        """
-        with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-            # Prepare the code, possibly wrapping it to simulate input
-            prepared_code = CodeExecutor._prepare_code_for_execution(code, input_simulation)
+    def execute_python_code(code, input_simulations=None):
+        with SecureTempFile() as tmp:
+            prepared_code = CodeExecutor._prepare_code_for_execution(code, input_simulations)
             tmp.write(prepared_code.encode())
             tmp.flush()
             tmp_name = tmp.name
@@ -39,34 +45,24 @@ class CodeExecutor:
         except subprocess.CalledProcessError as e:
             logging.error(f"Execution error: {e.stderr}")
             return f"Error executing Python code: {e.stderr}"
-        except Exception as e:
-            logging.error(f"Unexpected error: {e}")
-            return f"Unexpected error: {e}"
-        except subprocess.TimeoutExpired as e:
-            logging.error(f"Execution timeout: {e}")
-            return f"Execution timeout: {e}"
-        
-        finally:
-            os.remove(tmp_name)
+        except subprocess.TimeoutExpired:
+            logging.error("Execution timeout. The code did not complete within the allowed time.")
+            return "Execution timeout: The code did not complete within the allowed time."
 
     @staticmethod
-    def _prepare_code_for_execution(code, input_simulation):
-        """
-        Prepares the Python code for execution, simulating 'input()' if necessary.
-        """
-        if input_simulation is not None:
-            # Simulate input by replacing 'input()' calls with provided simulations
-            simulated_input_code = f"input = lambda x=None: {repr(input_simulation)}\n" + code
-            return simulated_input_code
+    def _prepare_code_for_execution(code, input_simulations):
+        if input_simulations is not None:
+            simulated_input_code = ''
+            for input_value in input_simulations:
+                simulated_input_code += f"input = lambda x=None, _values={input_simulations}: _values.pop(0)\n"
+            return simulated_input_code + code
         else:
             return code
+
     @staticmethod
     def save_code(code, filename):
-        """
-        Saves the given code to a file specified by filename.
-        """
         try:
-            file_path = os.path.join("projects", filename)  # Construct the correct file path
+            file_path = os.path.join("projects", filename)
             with open(file_path, "w") as file:
                 file.write(code)
             logging.info(f"Code saved to {file_path}")
@@ -75,9 +71,6 @@ class CodeExecutor:
 
     @staticmethod
     def read_code(filename):
-        """
-        Reads and returns the code from a file specified by filename.
-        """
         try:
             with open(filename, "r") as file:
                 code = file.read()
@@ -89,14 +82,11 @@ class CodeExecutor:
 
     @staticmethod
     def remove_comments_and_extract_code(markdown_text):
-        """
-        Extracts Python code blocks from markdown text, removes comments, and ensures no markdown syntax is included.
-        """
         pattern = r"```python\n(.*?)```"
         matches = re.findall(pattern, markdown_text, re.DOTALL)
         if not matches:
             logging.warning("No Python code blocks found in the Markdown text.")
             return ""
-        code_blocks = [re.sub(r'#.*', '', match.strip()) for match in matches]  # Remove comments
-        clean_code = '\n'.join(code_blocks).replace('```python', '').replace('```', '')  # Remove markdown syntax
+        code_blocks = [re.sub(r'#.*', '', match.strip()) for match in matches]
+        clean_code = '\n'.join(code_blocks).replace('```python', '').replace('```', '')
         return clean_code
