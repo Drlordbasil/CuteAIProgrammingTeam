@@ -4,6 +4,8 @@ gpt3 = "gpt-3.5-turbo-0125"
 ft3 = "ft:gpt-3.5-turbo-1106:personal::8uLu2E19"
 model = gpt3
 smartmodel = gpt4
+
+gemini_api_key = ""
 idea_prompt = """
 Generate a profitable Python program idea with zero startup and upkeep costs that can be developed in 1 file. 
 The program should be able to run on any computer with Python installed and should make profit in a reasonable amount of time. 
